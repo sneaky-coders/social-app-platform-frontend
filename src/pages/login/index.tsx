@@ -1,12 +1,17 @@
+// src/pages/login/index.tsx
+
 import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
 
-interface LoginScreenProps {}
-
-const LoginScreen: React.FC<LoginScreenProps> = () => {
+const LoginScreen: React.FC = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -15,10 +20,19 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission logic here
-    console.log('Form submitted:', formData);
+    try {
+      const response = await axios.post('http://localhost:5000/api/users/login', formData);
+      if (response.status === 200) {
+        login();
+        navigate('/dashboard');
+      } else {
+        console.error('Login failed');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+    }
   };
 
   return (
@@ -62,7 +76,7 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
           </button>
         </form>
         <p className="text-gray-600 mt-6 text-center">
-          Don't have an account? <a href="#" className="text-blue-500 hover:underline">Sign up</a>
+          Don't have an account? <Link to="/register" className="text-blue-500 hover:underline">Sign up</Link>
         </p>
       </div>
     </div>

@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 
-interface RegistrationFormProps {}
-
-const RegistrationForm: React.FC<RegistrationFormProps> = () => {
+const RegistrationForm: React.FC = () => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -11,8 +10,6 @@ const RegistrationForm: React.FC<RegistrationFormProps> = () => {
     password: '',
     confirmPassword: '',
   });
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -23,27 +20,11 @@ const RegistrationForm: React.FC<RegistrationFormProps> = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      setSuccess(null);
-      return;
-    }
-
     try {
-      await axios.post('http://localhost:5000/api/users/register', formData);
-      setSuccess('Registration successful!');
-      setError(null);
-      setFormData({
-        username: '',
-        email: '',
-        contactNumber: '',
-        password: '',
-        confirmPassword: '',
-      });
-    } catch (err: any) {
-      setError(err.response?.data.message || 'Registration failed');
-      setSuccess(null);
+      const response = await axios.post('http://localhost:5000/api/users/register', formData);
+      console.log('Registration successful:', response.data);
+    } catch (error) {
+      console.error('Registration error:', error);
     }
   };
 
@@ -129,10 +110,8 @@ const RegistrationForm: React.FC<RegistrationFormProps> = () => {
             Sign Up
           </button>
         </form>
-        {success && <p className="text-green-500 mt-4 text-center">{success}</p>}
-        {error && <p className="text-red-500 mt-4 text-center">{error}</p>}
         <p className="text-gray-600 mt-6 text-center">
-          Already have an account? <a href="#" className="text-blue-500 hover:underline">Log in</a>
+          Already have an account? <Link to="/" className="text-blue-500 hover:underline">Log in</Link>
         </p>
       </div>
     </div>
