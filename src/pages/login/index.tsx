@@ -25,8 +25,8 @@ const LoginScreen: React.FC = () => {
     try {
       const response = await axios.post('http://localhost:5000/api/users/login', formData);
       if (response.status === 200) {
-        login();
-        navigate('/dashboard');
+        login(response.data.token); // Pass the token to the login function
+        navigate('/dashboard'); // Redirect to dashboard
       } else {
         console.error('Login failed');
       }

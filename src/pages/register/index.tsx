@@ -20,13 +20,29 @@ const RegistrationForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Add validation for password match
+    if (formData.password !== formData.confirmPassword) {
+      console.error('Passwords do not match');
+      return;
+    }
+  
     try {
-      const response = await axios.post('http://localhost:5000/api/users/register', formData);
+      const response = await axios.post('http://localhost:5000/api/users/register', {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+      });
       console.log('Registration successful:', response.data);
     } catch (error) {
-      console.error('Registration error:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Registration error:', error.response ? error.response.data : error.message);
+      } else {
+        console.error('Unexpected error:', error);
+      }
     }
   };
+  
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500">
