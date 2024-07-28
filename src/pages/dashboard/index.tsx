@@ -9,173 +9,72 @@ import {
   IconBell,
   IconSettings,
   IconPlus,
-  IconBellRinging,
-  IconHeart,
-  IconShare,
-  IconComments,
-  IconChartBar
+  IconTrendingUp,
+  IconActivity
 } from '@tabler/icons-react';
 
-// Define chart data type
-interface ChartData {
-  labels: string[];
-  datasets: {
-    label: string;
-    data: number[];
-    backgroundColor: string;
-    borderColor: string;
-    borderWidth: number;
-  }[];
+// Define new types
+interface UserStats {
+  posts: number;
+  followers: number;
+  following: number;
+}
+
+interface TrendingTopic {
+  id: number;
+  topic: string;
+  posts: number;
+}
+
+interface RecentActivity {
+  id: number;
+  activity: string;
+  timestamp: string;
 }
 
 const Dashboard: React.FC = () => {
-  const [user, setUser] = useState<{ username: string; email: string; lastSeen: string } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [posts, setPosts] = useState<Array<{ id: number; content: string; likes: number; comments: number }>>([]);
+  const [user, setUser] = useState<{ username: string; email: string } | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([]);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [newPost, setNewPost] = useState('');
-  const [notifications, setNotifications] = useState<Array<{ id: number; message: string }>>([]);
-  const [friendRequests, setFriendRequests] = useState<Array<{ id: number; username: string }>>([]);
-  const [analytics, setAnalytics] = useState<{ totalPosts: number; totalLikes: number; totalComments: number } | null>(null);
-  const [chartData, setChartData] = useState<ChartData>({
-    labels: [],
-    datasets: [
-      {
-        label: 'Posts Over Time',
-        data: [],
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        borderColor: 'rgba(75, 192, 192, 1)',
-        borderWidth: 1,
-      },
-      {
-        label: 'Likes Over Time',
-        data: [],
-        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-        borderColor: 'rgba(255, 99, 132, 1)',
-        borderWidth: 1,
-      }
-    ]
-  });
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchData = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setError('No token found. Please log in.');
-          setLoading(false);
-          return;
-        }
-
-        const response = await axios.get('/api/users/profile', {
-          headers: { Authorization: `Bearer ${token}` }
+        // Fetch user profile
+        const userResponse = await axios.get('/api/users/profile', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
+        setUser(userResponse.data);
 
-        if (response.status === 200 && response.data) {
-          setUser(response.data);
-        } else {
-          setError('No user data found.');
-        }
-      } catch (error) {
-        setError('Error fetching user data. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
+        // Fetch user stats
+        const statsResponse = await axios.get('/api/users/stats', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        setUserStats(statsResponse.data);
 
-    const fetchPosts = async () => {
-      try {
-        const response = await axios.get('/api/posts', {
+        // Fetch trending topics
+        const topicsResponse = await axios.get('/api/trending-topics', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
 
-        if (response.status === 200 && Array.isArray(response.data)) {
-          setPosts(response.data);
+        // Log and set the trending topics
+        console.log('Trending topics response:', topicsResponse.data);
+        setTrendingTopics(Array.isArray(topicsResponse.data) ? topicsResponse.data : []);
 
-          const dates = response.data.map(post => new Date(post.createdAt).toLocaleDateString());
-          const likes = response.data.map(post => post.likes);
-          const postCounts = response.data.map(() => 1); // Example counts
-
-          setChartData({
-            labels: dates,
-            datasets: [
-              {
-                label: 'Posts Over Time',
-                data: postCounts,
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1,
-              },
-              {
-                label: 'Likes Over Time',
-                data: likes,
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1,
-              }
-            ]
-          });
-        } else {
-          console.error('Invalid posts data format');
-        }
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-      }
-    };
-
-    const fetchNotifications = async () => {
-      try {
-        const response = await axios.get('/api/notifications', {
+        // Fetch recent activity
+        const activityResponse = await axios.get('/api/recent-activity', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
+        setRecentActivity(activityResponse.data);
 
-        if (response.status === 200 && Array.isArray(response.data)) {
-          setNotifications(response.data);
-        } else {
-          console.error('Invalid notifications data format');
-        }
       } catch (error) {
-        console.error('Error fetching notifications:', error);
+        console.error('Error fetching data:', error);
       }
     };
 
-    const fetchFriendRequests = async () => {
-      try {
-        const response = await axios.get('/api/friend-requests', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-
-        if (response.status === 200 && Array.isArray(response.data)) {
-          setFriendRequests(response.data);
-        } else {
-          console.error('Invalid friend requests data format');
-        }
-      } catch (error) {
-        console.error('Error fetching friend requests:', error);
-      }
-    };
-
-    const fetchAnalyticsData = async () => {
-      try {
-        const response = await axios.get('/api/analytics', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-
-        if (response.status === 200 && response.data) {
-          setAnalytics(response.data);
-        } else {
-          console.error('Invalid analytics data format');
-        }
-      } catch (error) {
-        console.error('Error fetching analytics data:', error);
-      }
-    };
-
-    fetchUserData();
-    fetchPosts();
-    fetchNotifications();
-    fetchFriendRequests();
-    fetchAnalyticsData();
+    fetchData();
   }, []);
 
   const handlePostChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -188,21 +87,10 @@ const Dashboard: React.FC = () => {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setNewPost('');
-      const response = await axios.get('/api/posts', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (response.status === 200 && Array.isArray(response.data)) {
-        setPosts(response.data);
-      } else {
-        console.error('Invalid posts data format');
-      }
     } catch (error) {
       console.error('Error creating post:', error);
     }
   };
-
-  if (loading) return <div className="text-center mt-4">Loading...</div>;
-  if (error) return <div className="text-center mt-4 text-red-500">{error}</div>;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
@@ -217,7 +105,6 @@ const Dashboard: React.FC = () => {
             />
             <h2 className="text-2xl font-semibold mt-4 text-gray-800">{user?.username || 'Loading...'}</h2>
             <p className="text-gray-600">{user?.email || 'Loading...'}</p>
-            <p className="text-gray-500 mt-2">Last seen: {user?.lastSeen || 'Loading...'}</p>
           </div>
           <ul className="space-y-4">
             <li className="flex items-center space-x-3 text-gray-700 hover:bg-gray-200 p-3 rounded cursor-pointer transition duration-300">
@@ -247,10 +134,10 @@ const Dashboard: React.FC = () => {
           </ul>
         </div>
 
-        {/* Main Feed */}
+        {/* Main Content */}
         <div className="flex-1 p-6">
-          <h2 className="text-3xl font-bold mb-4 text-gray-800">News Feed</h2>
           <div className="bg-white p-6 rounded-lg shadow-lg mb-4 border border-gray-200">
+            <h2 className="text-3xl font-bold mb-4 text-gray-800">Welcome Back!</h2>
             <textarea
               className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={3}
@@ -265,82 +152,52 @@ const Dashboard: React.FC = () => {
               <IconPlus size={16} /> Post
             </button>
           </div>
-          {posts.map(post => (
-            <div key={post.id} className="bg-white p-6 rounded-lg shadow-lg mb-4 border border-gray-200">
-              <p className="text-gray-700 mb-4">{post.content}</p>
-              <div className="flex justify-between items-center text-gray-600">
-                <div className="flex space-x-2">
-                  <button className="text-red-500 hover:text-red-700 flex items-center">
-                    <IconHeart size={16} /> <span className="ml-1">{post.likes}</span>
-                  </button>
-                  <button className="text-gray-500 hover:text-gray-700 flex items-center">
-                    <IconComments size={16} /> <span className="ml-1">{post.comments}</span>
-                  </button>
-                </div>
-                <button className="text-gray-500 hover:text-gray-700 flex items-center">
-                  <IconShare size={16} /> Share
-                </button>
-              </div>
+
+          {/* User Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
+            <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+              <h3 className="text-xl font-semibold mb-4 text-gray-800">Posts</h3>
+              <p className="text-4xl font-bold text-gray-600">{userStats?.posts || 'Loading...'}</p>
             </div>
-          ))}
-        </div>
-
-        {/* Right Sidebar */}
-        <div className="w-full md:w-1/4 lg:w-1/5 bg-white shadow-lg p-6 border-l border-gray-200">
-          {/* Notifications */}
-          <h2 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
-            <IconBellRinging size={24} className="mr-2" />
-            Notifications
-          </h2>
-          <div className="space-y-4">
-            {notifications.length === 0 ? (
-              <p className="text-gray-600">No notifications yet.</p>
-            ) : (
-              notifications.map(notification => (
-                <div key={notification.id} className="bg-gray-200 p-4 rounded-lg shadow-sm">
-                  <p className="text-gray-700">{notification.message}</p>
-                </div>
-              ))
-            )}
+            <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+              <h3 className="text-xl font-semibold mb-4 text-gray-800">Followers</h3>
+              <p className="text-4xl font-bold text-gray-600">{userStats?.followers || 'Loading...'}</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+              <h3 className="text-xl font-semibold mb-4 text-gray-800">Following</h3>
+              <p className="text-4xl font-bold text-gray-600">{userStats?.following || 'Loading...'}</p>
+            </div>
           </div>
 
-          {/* Friend Requests */}
-          <h2 className="text-2xl font-semibold mb-4 mt-8 text-gray-800 flex items-center">
-            <IconUsers size={24} className="mr-2" />
-            Friend Requests
-          </h2>
-          <div className="space-y-4">
-            {friendRequests.length === 0 ? (
-              <p className="text-gray-600">No friend requests.</p>
-            ) : (
-              friendRequests.map(request => (
-                <div key={request.id} className="bg-gray-200 p-4 rounded-lg shadow-sm flex justify-between items-center">
-                  <p className="text-gray-700">{request.username}</p>
-                  <button className="bg-blue-500 text-white py-1 px-2 rounded-lg hover:bg-blue-600">Accept</button>
-                </div>
-              ))
-            )}
+          {/* Trending Topics */}
+          <div className="bg-white p-6 rounded-lg shadow-lg mb-4 border border-gray-200">
+            <h2 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
+              <IconTrendingUp size={24} className="mr-2" />
+              Trending Topics
+            </h2>
+            <ul className="space-y-4">
+              {Array.isArray(trendingTopics) && trendingTopics.map(topic => (
+                <li key={topic.id} className="flex items-center justify-between">
+                  <span className="text-gray-700">{topic.topic}</span>
+                  <span className="text-gray-500">Posts: {topic.posts}</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
-          {/* Analytics */}
-          <h2 className="text-2xl font-semibold mb-4 mt-8 text-gray-800 flex items-center">
-            <IconChartBar size={24} className="mr-2" />
-            Analytics
-          </h2>
-          <div className="bg-gray-200 p-4 rounded-lg shadow-sm">
-            <p className="text-gray-700">Total Posts: {analytics?.totalPosts || 'Loading...'}</p>
-            <p className="text-gray-700">Total Likes: {analytics?.totalLikes || 'Loading...'}</p>
-            <p className="text-gray-700">Total Comments: {analytics?.totalComments || 'Loading...'}</p>
-          </div>
-
-          {/* Charts */}
-          <h2 className="text-2xl font-semibold mb-4 mt-8 text-gray-800 flex items-center">
-            <IconChartBar size={24} className="mr-2" />
-            Charts
-          </h2>
-          <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
-            <h3 className="text-xl font-semibold mb-2">Posts and Likes Over Time</h3>
-            <Line data={chartData} options={{ responsive: true }} />
+          {/* Recent Activity */}
+          <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+            <h2 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
+              <IconActivity size={24} className="mr-2" />
+              Recent Activity
+            </h2>
+            <ul className="space-y-4">
+              {Array.isArray(recentActivity) && recentActivity.map(activity => (
+                <li key={activity.id} className="text-gray-700">
+                  {activity.activity} <span className="text-gray-500">({new Date(activity.timestamp).toLocaleString()})</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>

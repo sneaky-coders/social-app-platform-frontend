@@ -1,16 +1,16 @@
-import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
     IconUser, IconMail, IconPhone, IconAddressBook, 
     IconCalendar, IconGlobe, IconMap, IconGenderNeutrois, 
-    IconPencil 
+    IconPencil, IconLoader 
 } from '@tabler/icons-react';
 
 interface UserProfileData {
     username?: string;
     email: string;
     alternateEmail?: string;
-    contact?: string;
+    contactNumber?: string;
     alternateContact?: string;
     addressLine1?: string;
     addressLine2?: string;
@@ -24,9 +24,10 @@ interface UserProfileData {
 
 const UserProfile: React.FC = () => {
     const [formData, setFormData] = useState<UserProfileData>({
+        username: '',
         email: '',
         alternateEmail: '',
-        contact: '',
+        contactNumber: '',
         alternateContact: '',
         addressLine1: '',
         addressLine2: '',
@@ -37,7 +38,6 @@ const UserProfile: React.FC = () => {
         religion: '',
         gender: '',
     });
-    const [editing, setEditing] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
 
@@ -49,9 +49,11 @@ const UserProfile: React.FC = () => {
                         Authorization: `Bearer ${localStorage.getItem('token')}`,
                     },
                 });
+                console.log('Profile data:', response.data);
                 setFormData(response.data);
                 setLoading(false);
             } catch (err) {
+                console.error('Error fetching profile:', err);
                 setError('Error fetching profile.');
                 setLoading(false);
             }
@@ -60,89 +62,61 @@ const UserProfile: React.FC = () => {
         fetchProfile();
     }, []);
 
-    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData(prevState => ({
-            ...prevState,
-            [name]: value,
-        }));
-    };
-
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
-        
-        try {
-            await axios.post('/api/users/details', formData, {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json',
-                },
-            });
-            alert('Profile updated successfully!');
-            setEditing(false);
-        } catch (err) {
-            setError('Error updating profile.');
-        }
-    };
-
-    if (loading) return <div className="p-6 bg-white rounded-lg shadow-md">Loading...</div>;
-    if (error) return <div className="text-red-500">{error}</div>;
+    if (loading) return (
+        <div className="p-8 bg-gradient-to-r from-teal-400 to-cyan-500 rounded-lg shadow-lg flex items-center justify-center min-h-screen">
+            <IconLoader size={32} className="animate-spin text-white" />
+        </div>
+    );
+    if (error) return (
+        <div className="p-8 text-red-600 bg-white rounded-lg shadow-lg">
+            <p className="text-lg font-semibold">{error}</p>
+        </div>
+    );
 
     return (
-        <div className="p-6 bg-white rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold mb-4">User Profile</h2>
-            <div className="md:w-full">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Render form fields with optional editing */}
+        <div className="p-8 bg-gray-50 min-h-screen">
+            {/* Hero Section */}
+            <div className="bg-white rounded-lg shadow-xl p-6 flex flex-col items-center mb-8">
+                <img 
+                    src="https://via.placeholder.com/120" // Placeholder for profile picture
+                    alt="Profile"
+                    className="w-32 h-32 rounded-full border-4 border-teal-400 mb-4"
+                />
+                <h1 className="text-4xl font-semibold text-gray-900">{formData.username || 'User Name'}</h1>
+                <p className="text-xl text-gray-700">{formData.email || 'user@example.com'}</p>
+            </div>
+
+            {/* Profile Details */}
+            <div className="bg-white rounded-lg shadow-xl p-6">
+                <h2 className="text-3xl font-semibold text-gray-900 mb-6">Profile Details</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {Object.entries({
-                        'Email': { key: 'email', icon: <IconMail size={24} className="text-gray-500 mr-2" /> },
-                        'Alternate Email': { key: 'alternateEmail', icon: <IconMail size={24} className="text-gray-500 mr-2" /> },
-                        'Contact': { key: 'contact', icon: <IconPhone size={24} className="text-gray-500 mr-2" /> },
-                        'Alternate Contact': { key: 'alternateContact', icon: <IconPhone size={24} className="text-gray-500 mr-2" /> },
-                        'Address Line 1': { key: 'addressLine1', icon: <IconAddressBook size={24} className="text-gray-500 mr-2" /> },
-                        'Address Line 2': { key: 'addressLine2', icon: <IconAddressBook size={24} className="text-gray-500 mr-2" /> },
-                        'Date of Birth': { key: 'dateOfBirth', icon: <IconCalendar size={24} className="text-gray-500 mr-2" /> },
-                        'Country': { key: 'country', icon: <IconGlobe size={24} className="text-gray-500 mr-2" /> },
-                        'State': { key: 'state', icon: <IconMap size={24} className="text-gray-500 mr-2" /> },
-                        'Gender': { key: 'gender', icon: <IconGenderNeutrois size={24} className="text-gray-500 mr-2" /> },
-                        'Religion': { key: 'religion', icon: <IconPencil size={24} className="text-gray-500 mr-2" /> },
-                        'Blood Group': { key: 'bloodGroup', icon: <IconPencil size={24} className="text-gray-500 mr-2" /> },
+                        'Username': { key: 'username', icon: <IconUser size={24} className="text-teal-500" /> },
+                        'Email': { key: 'email', icon: <IconMail size={24} className="text-teal-500" /> },
+                        'Alternate Email': { key: 'alternateEmail', icon: <IconMail size={24} className="text-teal-500" /> },
+                        'Contact': { key: 'contactNumber', icon: <IconPhone size={24} className="text-teal-500" /> },
+                        'Alternate Contact': { key: 'alternateContact', icon: <IconPhone size={24} className="text-teal-500" /> },
+                        'Address Line 1': { key: 'addressLine1', icon: <IconAddressBook size={24} className="text-teal-500" /> },
+                        'Address Line 2': { key: 'addressLine2', icon: <IconAddressBook size={24} className="text-teal-500" /> },
+                        'Date of Birth': { key: 'dateOfBirth', icon: <IconCalendar size={24} className="text-teal-500" /> },
+                        'Country': { key: 'country', icon: <IconGlobe size={24} className="text-teal-500" /> },
+                        'State': { key: 'state', icon: <IconMap size={24} className="text-teal-500" /> },
+                        'Gender': { key: 'gender', icon: <IconGenderNeutrois size={24} className="text-teal-500" /> },
+                        'Religion': { key: 'religion', icon: <IconPencil size={24} className="text-teal-500" /> },
+                        'Blood Group': { key: 'bloodGroup', icon: <IconPencil size={24} className="text-teal-500" /> },
                     }).map(([label, { key, icon }]) => (
-                        <div key={key} className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition">
-                            <label className="block text-gray-700 mb-2 flex items-center">
-                                {icon}
-                                {label}
-                            </label>
-                            {editing ? (
-                                <input
-                                    type={key === 'dateOfBirth' ? 'date' : 'text'}
-                                    name={key}
-                                    value={formData[key as keyof UserProfileData] || ''}
-                                    onChange={handleChange}
-                                    className="border p-2 rounded w-full"
-                                />
-                            ) : (
-                                <p>{formData[key as keyof UserProfileData] || 'Not provided'}</p>
-                            )}
+                        <div key={key} className="bg-gray-100 p-6 rounded-lg border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300">
+                            <div className="flex items-center space-x-4">
+                                <div className="text-teal-500">
+                                    {icon}
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-800">{label}</h3>
+                                    <p className="text-gray-600">{formData[key as keyof UserProfileData] || 'Not provided'}</p>
+                                </div>
+                            </div>
                         </div>
                     ))}
-                </div>
-                <div className="flex justify-end gap-4 mt-4">
-                    {editing ? (
-                        <button
-                            onClick={handleSubmit}
-                            className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-600 transition"
-                        >
-                            Save
-                        </button>
-                    ) : (
-                        <button
-                            onClick={() => setEditing(true)}
-                            className="bg-green-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-green-600 transition"
-                        >
-                            Edit Profile
-                        </button>
-                    )}
                 </div>
             </div>
         </div>

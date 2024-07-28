@@ -1,16 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { IconHeart, IconShare, IconMessage, IconFilter } from '@tabler/icons-react';
+import { IconHeart, IconShare, IconMessage, IconFilter, IconSearch } from '@tabler/icons-react';
+
+interface Feed {
+  id: number;
+  user: string;
+  userImage: string;
+  title: string;
+  content: string;
+  image: string;
+  time: string;
+  category: string;
+}
 
 const HomePage: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
-  const [feeds, setFeeds] = useState<any[]>([]);
+  const [feeds, setFeeds] = useState<Feed[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('All');
+  const [search, setSearch] = useState<string>('');
 
   // Sample data for testing
-  const sampleFeeds = [
+  const sampleFeeds: Feed[] = [
     {
       id: 1,
       user: 'John Doe',
@@ -59,6 +71,7 @@ const HomePage: React.FC = () => {
   }, []);
 
   const filteredFeeds = filter === 'All' ? feeds : feeds.filter(feed => feed.category === filter);
+  const searchedFeeds = filteredFeeds.filter(feed => feed.title.toLowerCase().includes(search.toLowerCase()));
 
   if (!isAuthenticated) {
     return <div className="text-center mt-4">Please log in to view this page.</div>;
@@ -68,25 +81,68 @@ const HomePage: React.FC = () => {
   if (error) return <div className="text-center mt-4 text-red-500">{error}</div>;
 
   return (
-    <div className="flex flex-1 bg-gray-100">
+    <div className="flex flex-col lg:flex-row bg-gray-100 min-h-screen">
       {/* Sidebar */}
-      <aside className="w-1/4 bg-white shadow-lg p-4 border-r border-gray-200 hidden lg:block">
-        <h2 className="text-2xl font-semibold mb-6 text-gray-800">Trending Topics</h2>
-        <ul className="space-y-4">
-          <li className="bg-gray-100 p-4 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">Tech Innovations</li>
-          <li className="bg-gray-100 p-4 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">AI Advancements</li>
-          <li className="bg-gray-100 p-4 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">Cybersecurity</li>
-        </ul>
+      <aside className="w-full lg:w-1/4 bg-gradient-to-b from-indigo-500 to-indigo-700 text-white p-6 flex flex-col">
+        <div className="flex items-center mb-6">
+          <img
+            src="https://randomuser.me/api/portraits/men/1.jpg"
+            alt="User"
+            className="w-16 h-16 rounded-full border-4 border-white mr-4"
+          />
+          <div>
+            <h2 className="text-2xl font-bold">John Doe</h2>
+            <p className="text-sm">Your profile</p>
+          </div>
+        </div>
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-4">Categories</h3>
+          <ul className="space-y-4">
+            <li
+              className={`p-4 rounded-lg cursor-pointer ${filter === 'Tech' ? 'bg-indigo-800' : 'bg-indigo-700'} hover:bg-indigo-600 transition-colors`}
+              onClick={() => setFilter('Tech')}
+            >
+              Tech Innovations
+            </li>
+            <li
+              className={`p-4 rounded-lg cursor-pointer ${filter === 'AI' ? 'bg-indigo-800' : 'bg-indigo-700'} hover:bg-indigo-600 transition-colors`}
+              onClick={() => setFilter('AI')}
+            >
+              AI Advancements
+            </li>
+            <li
+              className={`p-4 rounded-lg cursor-pointer ${filter === 'Cybersecurity' ? 'bg-indigo-800' : 'bg-indigo-700'} hover:bg-indigo-600 transition-colors`}
+              onClick={() => setFilter('Cybersecurity')}
+            >
+              Cybersecurity
+            </li>
+            <li
+              className={`p-4 rounded-lg cursor-pointer ${filter === 'All' ? 'bg-indigo-800' : 'bg-indigo-700'} hover:bg-indigo-600 transition-colors`}
+              onClick={() => setFilter('All')}
+            >
+              All
+            </li>
+          </ul>
+        </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 lg:p-8">
-        <header className="flex items-center justify-between mb-6">
+      <main className="flex-1 p-6 lg:p-8">
+        <header className="flex flex-col lg:flex-row items-center justify-between mb-6">
           <h2 className="text-3xl font-bold text-gray-800">Feed</h2>
-          <div className="flex items-center space-x-4">
-      
+          <div className="flex items-center space-x-4 mt-4 lg:mt-0">
+            <div className="relative w-full max-w-xs">
+              <input
+                type="text"
+                className="w-full py-2 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Search..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <IconSearch size={20} className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500" />
+            </div>
             <button
-              className="flex items-center bg-gray-200 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
+              className="flex items-center bg-indigo-600 py-2 px-4 rounded-lg text-white hover:bg-indigo-700 transition-colors"
               onClick={() => setFilter(filter === 'All' ? 'Tech' : 'All')}
             >
               <IconFilter size={20} />
@@ -97,17 +153,17 @@ const HomePage: React.FC = () => {
 
         <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-gray-200">
           <textarea
-            className="w-full p-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             rows={3}
             placeholder="What's on your mind?"
           />
-          <button className="bg-blue-600 text-white py-2 px-4 rounded-lg mt-3 hover:bg-blue-700 transition-colors">
+          <button className="bg-indigo-600 text-white py-2 px-4 rounded-lg mt-3 hover:bg-indigo-700 transition-colors">
             Post
           </button>
         </div>
 
-        {filteredFeeds.map(feed => (
-          <div key={feed.id} className="bg-white p-6 rounded-lg shadow-md mb-6 border border-gray-200">
+        {searchedFeeds.map(feed => (
+          <div key={feed.id} className="bg-white p-6 rounded-lg shadow-md mb-6 border border-gray-200 hover:shadow-lg transition-shadow">
             <div className="flex items-center mb-4">
               <img src={feed.userImage} alt={feed.user} className="w-12 h-12 object-cover rounded-full mr-4" />
               <div>
@@ -116,17 +172,18 @@ const HomePage: React.FC = () => {
               </div>
             </div>
             <img src={feed.image} alt={feed.title} className="w-full h-64 object-cover rounded-lg mb-4" />
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">{feed.title}</h3>
             <p className="text-gray-700 mb-4">{feed.content}</p>
             <div className="flex items-center space-x-4 text-gray-500">
-              <button className="flex items-center hover:text-blue-600 transition-colors">
+              <button className="flex items-center hover:text-indigo-600 transition-colors">
                 <IconHeart size={20} />
                 <span className="ml-2">Like</span>
               </button>
-              <button className="flex items-center hover:text-blue-600 transition-colors">
+              <button className="flex items-center hover:text-indigo-600 transition-colors">
                 <IconMessage size={20} />
                 <span className="ml-2">Comment</span>
               </button>
-              <button className="flex items-center hover:text-blue-600 transition-colors">
+              <button className="flex items-center hover:text-indigo-600 transition-colors">
                 <IconShare size={20} />
                 <span className="ml-2">Share</span>
               </button>
