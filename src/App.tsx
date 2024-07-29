@@ -5,14 +5,17 @@ import HomePage from './components/Homepage';
 import ProfilePage from './components/Profile';
 import LoginPage from './components/Login';
 import RegisterPage from './components/Register';
-import SettingsPage from './components/Setting'; // Import the SettingsPage component
-import FeedPage from './components/Feed';
+import SettingsPage from './components/Setting';
+import FriendsPage from './components/Friends';
+import FollowersPage from './components/Follower';
+import ChatWidget from './components/ChatWidget'; // Import the ChatWidget
 
-interface AppProps {}
-
-const App: React.FC<AppProps> = () => {
+const App: React.FC = () => {
   const [username, setUsername] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  // Assuming userId can be derived from username or another method
+  const userId = username ? username : ''; // Replace this logic with your actual user ID retrieval
 
   const handleLogin = (user: string) => {
     console.log('Logging in user:', user); // Debugging statement
@@ -24,12 +27,12 @@ const App: React.FC<AppProps> = () => {
     console.log('Logging out'); // Debugging statement
     setUsername(null);
     setIsAuthenticated(false);
-    // Clear tokens or call API to end session here if necessary
+    // Here you might also want to clear tokens or call an API to end the session
   };
 
   return (
     <Router>
-      {/* Conditionally render TopNavBar */}
+      {/* Only show TopNavBar if authenticated */}
       {isAuthenticated && <TopNavBar username={username} isAuthenticated={isAuthenticated} onLogout={handleLogout} />}
       <Routes>
         {/* Public Routes */}
@@ -39,13 +42,15 @@ const App: React.FC<AppProps> = () => {
         {/* Protected Routes */}
         <Route path="/" element={isAuthenticated ? <Navigate to="/homepage" /> : <Navigate to="/login" />} />
         <Route path="/homepage" element={isAuthenticated ? <HomePage /> : <Navigate to="/login" />} />
-        <Route path="/profile" element={isAuthenticated ? <ProfilePage username={username} /> : <Navigate to="/login" />} />
-        <Route path="/settings" element={isAuthenticated ? <SettingsPage /> : <Navigate to="/login" />} />
-        <Route path="/feed" element={<FeedPage />} />
+        <Route path="/profile" element={<ProfilePage username={username} />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/friends" element={<FriendsPage />} />
+        <Route path="/followers" element={<FollowersPage />} />
 
         {/* Redirect any undefined routes */}
         <Route path="*" element={<Navigate to={isAuthenticated ? "/homepage" : "/login"} />} />
       </Routes>
+      {isAuthenticated && <ChatWidget userId={userId} />} {/* Show ChatWidget if authenticated */}
     </Router>
   );
 };

@@ -1,4 +1,5 @@
 import React from 'react';
+import { IconShare, IconMessage, IconHeart } from '@tabler/icons-react';
 
 interface Post {
   id: number;
@@ -55,13 +56,24 @@ const FeedPage: React.FC = () => {
             </div>
             <p className="text-gray-700 mb-4">{post.content}</p>
             <img src={post.image} alt="Post" className="w-full h-auto rounded-lg mb-4" />
-            <div className="flex items-center justify-between text-gray-600">
+            <div className="flex items-center justify-between mb-4 text-gray-600">
               <span className="flex items-center">
                 <span className="font-semibold mr-2">{post.likes}</span> Likes
               </span>
               <span className="flex items-center">
                 <span className="font-semibold mr-2">{post.comments}</span> Comments
               </span>
+            </div>
+            <div className="flex items-center space-x-4 text-gray-600">
+              <button className="flex items-center hover:text-red-500 transition">
+                <IconHeart size={20} className="mr-2" /> Like
+              </button>
+              <button className="flex items-center hover:text-blue-500 transition">
+                <IconShare size={20} className="mr-2" /> Share
+              </button>
+              <button className="flex items-center hover:text-blue-500 transition">
+                <IconMessage size={20} className="mr-2" /> Comment
+              </button>
             </div>
           </div>
         ))}

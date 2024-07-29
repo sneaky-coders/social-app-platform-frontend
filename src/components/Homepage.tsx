@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   IconUser, 
@@ -6,12 +6,38 @@ import {
   IconActivity, 
   IconTrendingUp 
 } from '@tabler/icons-react';
+import axios from 'axios';
+
+interface User {
+  id: string;
+  username: string;
+}
 
 const HomePage: React.FC = () => {
+  const [suggestedFriends, setSuggestedFriends] = useState<User[]>([]);
+
+  useEffect(() => {
+    // Fetch suggested friends
+    const fetchSuggestedFriends = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/users'); // Adjust API endpoint
+        setSuggestedFriends(response.data);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+
+    fetchSuggestedFriends();
+  }, []);
+
+  const getAvatar = (username: string) => {
+    return username.charAt(0).toUpperCase(); // Display the first letter of the username
+  };
+
   return (
     <div className="flex flex-col md:flex-row bg-gray-200 min-h-screen">
       {/* Sidebar */}
-      <aside className="w-full md:w-1/5 bg-white p-4 border-r border-gray-300 shadow-lg">
+      <aside className="w-full md:w-1/5 bg-white p-4 border-r border-gray-300 shadow-md">
         <div className="flex items-center justify-center mb-8">
           <h1 className="text-3xl font-extrabold text-gray-800">Social</h1>
         </div>
@@ -72,20 +98,26 @@ const HomePage: React.FC = () => {
       </main>
 
       {/* Right Sidebar */}
-      <aside className="w-full md:w-1/5 bg-white p-4 border-l border-gray-300 shadow-lg">
+      <aside className="w-full md:w-1/5 bg-white p-4 border-l border-gray-300 shadow-md">
         <h2 className="text-2xl font-semibold mb-6 text-gray-800">Friend Suggestions</h2>
         <div className="space-y-6">
-          <div className="bg-gray-100 p-4 rounded-lg shadow-md flex items-center space-x-4">
-            <img src="https://via.placeholder.com/50" alt="Suggested Friend" className="w-12 h-12 rounded-full" />
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg text-gray-800">Suggested Friend</h3>
-              <p className="text-gray-600">User Name</p>
-              <button className="mt-2 bg-blue-600 text-white py-1 px-4 rounded-full hover:bg-blue-700 transition duration-300">
-                Add Friend
-              </button>
-            </div>
-          </div>
-          {/* More suggestions */}
+          {suggestedFriends.length > 0 ? (
+            suggestedFriends.map(user => (
+              <div key={user.id} className="bg-gray-100 p-4 rounded-lg shadow-md flex items-center space-x-4">
+                <div className="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-200 text-indigo-800 font-semibold">
+                  {getAvatar(user.username)}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg text-gray-800">{user.username}</h3>
+                  <button className="mt-2 bg-blue-600 text-white py-1 px-4 rounded-full hover:bg-blue-700 transition duration-300">
+                    Add Friend
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-center text-gray-500">No suggestions available</p>
+          )}
         </div>
       </aside>
     </div>
