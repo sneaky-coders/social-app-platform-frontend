@@ -3,33 +3,26 @@ import axios from 'axios';
 import { IconEdit, IconPlus, IconHeart, IconMessage } from '@tabler/icons-react';
 import Logo from '../../public/saibha.jpeg';
 
-interface UserProfile {
-  username: string;
-  email: string;
-  posts: Array<Post>;
-  followersCount: number;
-  followingCount: number;
-  friends: Array<Friend>;
-}
-
 interface Post {
   id: number;
   content: string;
+  image: string | null;
   createdAt: string;
 }
 
-interface Friend {
-  id: number;
-  name: string;
-  avatar: string;
+interface Profile {
+  username: string;
+  email: string;
+  posts: Post[];
+  followersCount: number;
+  followingCount: number;
+  friends: Array<{ id: number; name: string; avatar: string }>;
 }
 
 const ProfilePage: React.FC<{ username: string | null }> = ({ username }) => {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [newPostContent, setNewPostContent] = useState<string>('');
-  const [newPostImage, setNewPostImage] = useState<File | null>(null);
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -56,42 +49,6 @@ const ProfilePage: React.FC<{ username: string | null }> = ({ username }) => {
     fetchProfileData();
   }, [username]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setNewPostImage(e.target.files[0]);
-    }
-  };
-
-  const handlePostSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append('content', newPostContent);
-    if (newPostImage) {
-      formData.append('image', newPostImage);
-    }
-
-    try {
-      await axios.post('http://localhost:5000/api/posts', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        withCredentials: true
-      });
-      // Clear the form
-      setNewPostContent('');
-      setNewPostImage(null);
-      // Fetch updated profile data
-      const response = await axios.get('http://localhost:5000/api/user/profile', {
-        params: { username },
-        withCredentials: true
-      });
-      setProfile(response.data);
-    } catch (error) {
-      setError('Failed to create post');
-      console.error('Error creating post:', error);
-    }
-  };
-
   if (loading) return <div className="text-center text-gray-500">Loading...</div>;
   if (error) return <div className="text-center text-red-500">{error}</div>;
 
@@ -114,7 +71,7 @@ const ProfilePage: React.FC<{ username: string | null }> = ({ username }) => {
                 alt="Profile"
                 className="w-32 h-32 rounded-full border-4 border-white shadow-lg"
               />
-              <button className="absolute bottom-0 right-0 transform translate-x-1/2 translate-y-1/2 bg-white text-indigo-500 p-2 rounded-full shadow-lg hover:bg-indigo-100 transition">
+              <button className="absolute bottom-0 right-0 bg-white text-indigo-500 p-2 rounded-full shadow-lg hover:bg-indigo-100 transition">
                 <IconEdit size={20} />
               </button>
             </div>
@@ -140,37 +97,6 @@ const ProfilePage: React.FC<{ username: string | null }> = ({ username }) => {
         </div>
       </div>
 
-      {/* Create Post Form */}
-      <div className="col-span-1 lg:col-span-3 bg-white shadow-xl rounded-lg p-6 mb-6">
-        <h2 className="text-2xl font-semibold mb-6">Create a Post</h2>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
-        <form onSubmit={handlePostSubmit}>
-          <div className="mb-4">
-            <textarea
-              value={newPostContent}
-              onChange={(e) => setNewPostContent(e.target.value)}
-              rows={4}
-              className="w-full p-3 border border-gray-300 rounded-lg"
-              placeholder="What's on your mind?"
-            />
-          </div>
-          <div className="mb-4">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="w-full border border-gray-300 rounded-lg p-2"
-            />
-          </div>
-          <button
-            type="submit"
-            className="bg-indigo-500 text-white py-2 px-4 rounded-md hover:bg-indigo-600 transition"
-          >
-            Post
-          </button>
-        </form>
-      </div>
-
       {/* Posts Feed */}
       <div className="col-span-1 lg:col-span-3 bg-white shadow-xl rounded-lg p-6">
         <div className="flex justify-between items-center mb-6">
@@ -194,6 +120,7 @@ const ProfilePage: React.FC<{ username: string | null }> = ({ username }) => {
                 </div>
               </div>
               <p className="text-gray-700 mb-3">{post.content}</p>
+              {post.image && <img src={`http://localhost:5000/${post.image}`} alt="Post" className="w-full h-auto rounded-lg mb-3" />}
               <div className="flex space-x-4 text-gray-600">
                 <button className="flex items-center hover:text-indigo-500 transition">
                   <IconHeart size={16} className="mr-1" /> Like

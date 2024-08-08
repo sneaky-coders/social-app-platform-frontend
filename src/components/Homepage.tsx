@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  IconUser, 
-  IconFriends, 
-  IconActivity, 
-  IconTrendingUp 
+import {
+  IconUser,
+  IconFriends,
+  IconActivity,
+  IconTrendingUp
 } from '@tabler/icons-react';
 import axios from 'axios';
 
@@ -13,25 +13,81 @@ interface User {
   username: string;
 }
 
-const HomePage: React.FC = () => {
+interface Post {
+  id: string;
+  content: string;
+  username: string;
+}
+
+interface HomePageProps {
+  username: string | null;
+}
+
+const HomePage: React.FC<HomePageProps> = ({ username }) => {
   const [suggestedFriends, setSuggestedFriends] = useState<User[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [content, setContent] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Fetch suggested friends
     const fetchSuggestedFriends = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/users'); // Adjust API endpoint
+        const response = await axios.get('http://localhost:5000/api/users');
         setSuggestedFriends(response.data);
       } catch (error) {
+        setError('Error fetching users. Please try again later.');
         console.error('Error fetching users:', error);
       }
     };
 
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/posts');
+        setPosts(response.data);
+      } catch (error) {
+        setError('Error fetching posts. Please try again later.');
+        console.error('Error fetching posts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     fetchSuggestedFriends();
+    fetchPosts();
   }, []);
 
-  const getAvatar = (username: string) => {
-    return username.charAt(0).toUpperCase(); // Display the first letter of the username
+  const handleContentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(event.target.value);
+  };
+
+  const handlePostSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const postData = {
+      content,
+      // Username is not included; backend will handle it
+    };
+
+    try {
+      await axios.post('http://localhost:5000/api/posts', postData);
+      setContent(''); // Clear the content after successful submission
+      setSuccessMessage('Post created successfully!');
+      // Fetch posts again to include the new post
+      const response = await axios.get('http://localhost:5000/api/posts');
+      setPosts(response.data);
+    } catch (error) {
+      setError('Error creating post. Please try again later.');
+      console.error('Error creating post:', error);
+    }
+  };
+
+  const getAvatar = (username: string | undefined) => {
+    if (!username) {
+      return '?'; // Return a default character if username is undefined or empty
+    }
+    return username.charAt(0).toUpperCase(); // Return the first character of the username
   };
 
   return (
@@ -73,27 +129,48 @@ const HomePage: React.FC = () => {
       <main className="w-full md:w-3/5 p-6">
         <div className="bg-white p-6 rounded-xl shadow-xl mb-8">
           <h2 className="text-2xl font-semibold mb-4 text-gray-800">What's on your mind?</h2>
-          <textarea
-            rows={4}
-            className="w-full border border-gray-300 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Share your thoughts..."
-          ></textarea>
-          <button className="mt-4 bg-blue-600 text-white py-2 px-6 rounded-full hover:bg-blue-700 transition duration-300">
-            Post
-          </button>
+          <form onSubmit={handlePostSubmit}>
+            <textarea
+              rows={4}
+              className="w-full border border-gray-300 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Share your thoughts..."
+              value={content}
+              onChange={handleContentChange}
+              required
+            ></textarea>
+            <button
+              type="submit"
+              className="mt-4 bg-blue-600 text-white py-2 px-6 rounded-full hover:bg-blue-700 transition duration-300"
+            >
+              Post
+            </button>
+          </form>
+          {successMessage && <p className="mt-4 text-green-500">{successMessage}</p>}
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-xl shadow-xl">
-            <div className="flex items-start space-x-4 mb-4">
-              <img src="https://via.placeholder.com/50" alt="User Avatar" className="w-12 h-12 rounded-full" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-lg text-gray-800">User Name</h3>
-                <p className="text-gray-700 mt-2">This is a sample post content. It could be anything the user wants to share with their network.</p>
+        <div className="space-y-6 mt-8">
+          {isLoading ? (
+            <p>Loading posts...</p>
+          ) : error ? (
+            <p className="text-red-500">{error}</p>
+          ) : posts.length > 0 ? (
+            posts.map(post => (
+              <div key={post.id} className="bg-white p-6 rounded-xl shadow-xl">
+                <div className="flex items-start space-x-4 mb-4">
+                  <div className="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-200 text-indigo-800 font-semibold">
+                    {getAvatar(post.username)}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg text-gray-800">{post.username}</h3>
+                    <p className="text-gray-700 mt-2">{post.content}</p>
+                  </div>
+                </div>
+                {/* More posts */}
               </div>
-            </div>
-            {/* More posts */}
-          </div>
+            ))
+          ) : (
+            <p className="text-center text-gray-500">No posts available</p>
+          )}
         </div>
       </main>
 
